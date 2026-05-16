@@ -49,7 +49,8 @@ export async function queryBackendCommon<R>(params: any, endp: Endpoint): Promis
         }
     }
 
-    const endpoint = `${opts.host}/${endp}`
+    const host = opts.host.replace(/\/+$/, '')
+    const endpoint = `${host}/${endp}`
     params['client_version'] = browser.runtime.getManifest().version
 
     const extra_error = "Check if backend is running, or disable it in extension preferences."
@@ -69,7 +70,7 @@ export async function queryBackendCommon<R>(params: any, endp: Endpoint): Promis
         )
     } catch (err) {
         console.error(err)
-        throw new Error(`${endpoint}: unavailable (${(err as Error).toString()}).\n${extra_error}`)
+        throw new Error(`${endpoint}: unavailable (${(err as Error).toString()}).\n${extra_error}`, {cause: err})
     }
 
     // note: fetch API doesn't reject on HTTP error

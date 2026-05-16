@@ -165,8 +165,10 @@ def test_bad_port(addon: Addon, driver: Driver) -> None:
 
 @browsers()
 def test_blacklist_custom(addon: Addon, driver: Driver) -> None:
-    addon.configure(port='12345', blacklist=('stackoverflow.com',))
-    driver.get('https://stackoverflow.com/questions/27215462')
+    # FIXME hmm seems like doesn't work if we use just expandtesting.com
+    # maybe it should? feels like reasonable for blacklist...
+    addon.configure(port='12345', blacklist=('practice.expandtesting.com',))
+    driver.get('https://practice.expandtesting.com/infinite-scroll')
 
     for _ in timeout(2.0):
         # NOTE: need to poll here because we might observe state beforethe page was fully loaded
@@ -344,10 +346,11 @@ def test_show_visited_marks(addon: Addon, driver: Driver, backend: Backend) -> N
     )
 
 
+@browsers()
 def test_sidebar_basic(addon: Addon, driver: Driver, backend: Backend) -> None:
     url = 'https://en.wikipedia.org/wiki/Symplectic_group'
     visited = {
-        # this also tests org-mode style link highlighting (custom anchorme version)
+        # this also tests org-mode style link highlighting (custom linkifyjs parser)
         url: 'whatever\nalso [[https://wiki.openhumans.org/wiki/Personal_Science_Wiki][Personal Science Wiki]]\nmore text',
     }
     src = "ælso test unicode 💩"
@@ -472,11 +475,6 @@ def test_new_background_tab(addon: Addon, driver: Driver, backend: Backend, exit
 def test_sidebar_navigation(
     base_url: str, addon: Addon, driver: Driver, backend: Backend, exit_stack: ExitStack
 ) -> None:
-    if 'file:' in base_url and driver.name == 'chrome':
-        pytest.skip("TODO used to work, but must have broken after some Chrome update?")
-        # seems broken on any local page -- only transparent sidebar frame is shown
-        # the issue is that contentDocument.body is null -- no idea why
-
     if base_url == 'LOCAL':
         base_url = exit_stack.enter_context(local_http_server(PYTHON_DOC_PATH))
 
@@ -538,6 +536,10 @@ def test_sidebar_navigation(
     assert not addon.sidebar.visible
 
     driver.forward()
+
+    if 'file:' in base_url and driver.name == 'chrome':
+        # hmm for some reason on local pages in chrome the state isn't preserved.. maybe bfcache works somehow differently?
+        return
 
     # sidebar should be preserved between page transitions
     assert addon.sidebar.visible

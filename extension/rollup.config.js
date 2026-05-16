@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url'
 import typescript from '@rollup/plugin-typescript'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
-import replace from '@rollup/plugin-replace'
 import copy from 'rollup-plugin-copy'
 
 import {generateManifest} from './generate_manifest.js'
@@ -63,17 +62,6 @@ function generateManifestPlugin() {
 }
 
 const shared_plugins = () => [
-    // hmm ok this turned out not to be necessary, seems like this works as expected in the newer version
-    //replace({
-    //    include: ['**/anchorme.js'],
-    //    delimiters: ['', ''],
-    //    values: Object.fromEntries([
-    //        // remove square brackets from link detection regex to support org-mode links
-    //        // also see https://github.com/alexcorvi/anchorme.js/compare/gh-pages...karlicoss:anchorme.js:promnesia
-    //        [String.raw`\\[\\]`, ''],
-    //    ]),
-    //    preventAssignment: true,  // will be default soon, atm warns if not true
-    //}),
     typescript({
         outDir: buildDir,
         noEmitOnError: true,  // fail on errors
@@ -96,7 +84,7 @@ const compile = inputs => { return {
                 'webextension-polyfill',
                 'webext-options-sync',
                 'codemirror',
-                'anchorme',
+                'linkify-element',
             ]
             for (const x of third_party) {
                 if (id.includes(x)) {
@@ -129,14 +117,6 @@ const standalone = inputs => { return {
         format: 'iife',
     },
     plugins: [
-        replace({
-            values: {
-                // ugh. necessary for tippyjs since it is referring to some node stuff
-                // TODO could use the same for anchorme to replace the regex?
-                'process.env.NODE_ENV': JSON.stringify('production'),
-            },
-            preventAssignment: true,  // will be default soon, atm warns if not true
-        }),
        ...shared_plugins(),
     ],
 }}

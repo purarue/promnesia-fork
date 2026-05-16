@@ -9,9 +9,8 @@ Not used by the extension (since `rollup-plugin-typescript` is looking at `tscon
 
 ## dependencies
 - **codemirror**: for editing code on options page
-- **anchorme**: for linkifying URLs in the sidebar
-- **tippy.js**: for tooltips with visited marks on the page
-  - TODO seems like project is archived, so might need some alternative
+- **linkify-element/linkifyjs**: for linkifying URLs in the sidebar
+- **floating-ui**: for tooltips with visited marks on the page
 - **webext-options-sync**: for syncing extension options across browsers/devices
 
 ## devDependencies
@@ -20,7 +19,6 @@ Not used by the extension (since `rollup-plugin-typescript` is looking at `tscon
 - **@eslint/js**: eslint configs
 - **@rollup/plugin-commonjs**: needed for webext polyfill
 - **@rollup/plugin-node-resolve**: for Rollup to find modules in `node_modules`
-- **@rollup/plugin-replace**: for patching up some dependencies
 - **@rollup/plugin-typescript**
 - **@types/webextension-polyfill**: typescript definitions for the browser extension APIs
 - **chrome-webstore-upload-cli**: automate publishing to the Chrome Web Store
@@ -29,10 +27,8 @@ Not used by the extension (since `rollup-plugin-typescript` is looking at `tscon
 - **jest**: testing framework
 - **jest-environment-jsdom**: simulates a DOM environment for testing
 - **jest-fetch-mock**: mock `fetch` calls in tests
-- **node-fetch**: used in testing, but not really sure why? I though I used mocks
 - **rollup**: module bundler used to compile the extension
 - **rollup-plugin-copy**: copies static files (HTML, images) to the output directory
-- **tslib**: runtime helpers for typescript
 - **typescript**
 - **typescript-eslint**: enables eslint to support typescript
 - **web-ext**: Mozilla's command-line tool for running, linting, and building extensions

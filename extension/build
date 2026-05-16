@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from subprocess import check_call
+from subprocess import check_call, check_output
 
 # right, specifying id in manifest doesn't seem to work
 # AMO responds with: Server response: Duplicate add-on ID found. (status: 400)
@@ -28,20 +28,31 @@ THISDIR = Path(__file__).absolute().parent
 # FFS json doesn't allow newlines, need to put \n, which makes everything unreadable
 AMO_METADATA = {
   "summary": {
-    "en-US": "A reliable way of capturing and tagging web pages and content"
+    "en-US": "Recall which pages you already visited, why and in which context"
   },
   "description": {
     "en-US": """
-Grasp implements org-capture for Chrome. It adds button and keybindings to capture current page title and url, possibly selected text, additional comments or tags and sends it into your Org Mode file.
+Promnesia is a browser extension (Chrome/Firefox/Firefox mobile) which provides a sidebar which complements browser history with some enhanced features.
 
-To use it:
-- Install the extension from and setup hotkeys if necessary
-- You'll also need a running 'backend' to communicate with extension, see instructions [here](https://github.com/karlicoss/promnesia#install)
+TLDR: it lets you explore your browsing history in context: where you encountered it, in chat, on Twitter, on Reddit, or just in one of the text files on your computer.
+This is unlike most modern browsers, where you can only see when you visited the link.
+
+It allows you to answer different questions about the current web page:
+
+- have I been here before? When?
+- why have I bookmarked it?
+- how did I get on it? Which page has led to it?
+- who sent me this link? Can I just jump to the message?
+- which links on this page have I already explored?
+- which posts from this blog page have I already read?
+
+*NOTE*: to get the most benefits from the extension, you also need to set up a supplementary service. You can find the instructions [here](https://github.com/karlicoss/promnesia#setup).
 """
   },
   "requires_payment": False,
   "categories": {
-    "firefox": ["bookmarks"]
+    # see: https://mozilla.github.io/addons-server/topics/api/categories.html
+    "firefox": ["bookmarks", "search-tools"]
   },
   "support_email": {
     "en-US": "karlicoss.dev@gmail.com"
@@ -158,7 +169,7 @@ def main() -> None:
 
         assert len(errors) == 1, errors
         [err] = errors
-        d = '"/background/service_worker" is not supported'
+        d = 'The "/background/service_worker" manifest property must be paired with use of "/background/scripts" property for Firefox compatibility'
         assert d in err['description'], err
         print(f"NOTE: skipping '{d}' for chrome -- this is false positive in webext lint", file=sys.stderr)
 
@@ -177,6 +188,10 @@ def main() -> None:
 
     check_call([npm, 'run', 'build'], env=env, cwd=str(THISDIR))
 
+    if 'firefox' in target:
+        amo_metadata = THISDIR / 'amo-metadata.json'
+        amo_metadata.write_text(json.dumps(AMO_METADATA, indent=2))
+
     if args.lint:
         # TODO --self-hosted
         # TODO warnings as errors??
@@ -193,14 +208,12 @@ def main() -> None:
         assert args.lint
         assert args.release
 
-        check_call(['git', 'diff-index', '--exit-code', 'HEAD'])  # ensure repo is clean
+        repo_status = check_output(['git', 'status', '--porcelain', '--untracked-files=no'], text=True)
+        assert len(repo_status) == 0, repo_status  # ensure repo is clean
         source_zip = base_ext_dir / f'extension-source-{target}.zip'
         check_call(['git', 'archive', 'HEAD', '--output', source_zip], cwd=THISDIR)  # cwd so we only package the extension
 
         if 'firefox' in target:
-            amo_metadata = THISDIR / 'amo-metadata.json'
-            amo_metadata.write_text(json.dumps(AMO_METADATA, indent=2))
-
             # see https://extensionworkshop.com/documentation/develop/web-ext-command-reference/#web-ext-sign
             assert ('WEB_EXT_API_KEY' in os.environ) and ('WEB_EXT_API_SECRET' in os.environ), "env variables must be set to publish"
             check_call([
